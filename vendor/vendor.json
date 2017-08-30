@@ -1,0 +1,97 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "LgycO10DeSc2JRSEJEnXg6SfB0s=",
+			"path": "github.com/nlopes/slack",
+			"revision": "a1a63712460a18dbe828ae915f954a0f214f3d8e",
+			"revisionTime": "2016-10-03T12:27:58Z"
+		},
+		{
+			"checksumSHA1": "ssdHHJsQomfjUFJAELnUNCK/9ck=",
+			"path": "github.com/oschwald/geoip2-golang",
+			"revision": "496a3cbcb65a3cb54497fe4ae2273319e85160a4",
+			"revisionTime": "2016-09-10T23:16:03Z"
+		},
+		{
+			"checksumSHA1": "xmWd9nj+yZQ5TiHznuoyj4fkknk=",
+			"path": "github.com/oschwald/maxminddb-golang",
+			"revision": "2af0544f8e032bc7a363e897fbd9c6ed4884a1d6",
+			"revisionTime": "2016-09-19T21:31:57Z"
+		},
+		{
+			"checksumSHA1": "7EZyXN0EmZLgGxZxK01IJua4c8o=",
+			"path": "golang.org/x/net/websocket",
+			"revision": "b7883d29650d340156352196ef5e434db117757b",
+			"revisionTime": "2017-01-07T09:56:23Z"
+		},
+		{
+			"checksumSHA1": "ltPsvPB1hRUFXj1W7SWFHVy1GjQ=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "67f277b6fe017c42fc3b4a445edc999dd99edd58",
+			"revisionTime": "2016-10-10T22:15:02Z"
+		},
+		{
+			"checksumSHA1": "fpW2dhGFC6SrVzipJx7fjg2DIH8=",
+			"path": "golang.org/x/sys/windows",
+			"revision": "67f277b6fe017c42fc3b4a445edc999dd99edd58",
+			"revisionTime": "2016-10-10T22:15:02Z"
+		},
+		{
+			"checksumSHA1": "wSu8owMAP7GixsYoSZ4CmKUVhnU=",
+			"path": "gopkg.in/asn1-ber.v1",
+			"revision": "4e86f4367175e39f69d9358a5f17b4dda270378d",
+			"revisionTime": "2015-09-24T05:17:56Z"
+		},
+		{
+			"checksumSHA1": "+4r0PnLwwyhO5/jvU5R/TEJb4kA=",
+			"path": "gopkg.in/bsm/ratelimit.v1",
+			"revision": "db14e161995a5177acef654cb0dd785e8ee8bc22",
+			"revisionTime": "2016-02-20T15:49:07Z"
+		},
+		{
+			"checksumSHA1": "7jPSjzw3mckHVQ2SjY4NvtIJR4g=",
+			"path": "gopkg.in/ldap.v2",
+			"revision": "d0a5ced67b4dc310b9158d63a2c6f9c5ec13f105",
+			"revisionTime": "2016-08-08T14:54:09Z"
+		},
+		{
+			"checksumSHA1": "K7eQKUPxkpKI3TOsDjCrkrvOthg=",
+			"path": "gopkg.in/redis.v5",
+			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
+			"revisionTime": "2016-10-14T11:21:25Z"
+		},
+		{
+			"checksumSHA1": "vQSE4FOH4EvyzYA72w60XOetmVY=",
+			"path": "gopkg.in/redis.v5/internal",
+			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
+			"revisionTime": "2016-10-14T11:21:25Z"
+		},
+		{
+			"checksumSHA1": "2Ek4SixeRSKOX3mUiBMs3Aw+Guc=",
+			"path": "gopkg.in/redis.v5/internal/consistenthash",
+			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
+			"revisionTime": "2016-10-14T11:21:25Z"
+		},
+		{
+			"checksumSHA1": "rJYVKcBrwYUGl7nuuusmZGrt8mY=",
+			"path": "gopkg.in/redis.v5/internal/hashtag",
+			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
+			"revisionTime": "2016-10-14T11:21:25Z"
+		},
+		{
+			"checksumSHA1": "MuVVHw/uzk6gwBsQ8deMYacmgTM=",
+			"path": "gopkg.in/redis.v5/internal/pool",
+			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
+			"revisionTime": "2016-10-14T11:21:25Z"
+		},
+		{
+			"checksumSHA1": "94zp6E3FAG5jU66pK3fZl88aH/o=",
+			"path": "gopkg.in/redis.v5/internal/proto",
+			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
+			"revisionTime": "2016-10-14T11:21:25Z"
+		}
+	],
+	"rootPath": "gitlab.ops.threatstack.net/ops/vpnnotify"
+}
