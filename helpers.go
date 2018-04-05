@@ -46,6 +46,8 @@ func whatEnv() string {
 		env = "prod"
 	} else if strings.Contains(fqdn, "bunker") {
 		env = "bunker"
+	} else if strings.Contains(fqdn, "ua") {
+		env = "ua"
 	} else {
 		env = "NONE"
 	}
