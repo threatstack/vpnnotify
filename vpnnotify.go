@@ -79,7 +79,9 @@ func main() {
 	}
 
 	if config.RedisTLS {
-		rOpts.TLSConfig = &tls.Config{}
+		rOpts.TLSConfig = &tls.Config{
+			ServerName: config.RedisServer,
+		}
 	}
 
 	rcli := redis.NewClient(rOpts)
