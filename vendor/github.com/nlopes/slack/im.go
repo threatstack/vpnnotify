@@ -1,7 +1,7 @@
 package slack
 
 import (
-	"errors"
+	"context"
 	"net/url"
 	"strconv"
 )
@@ -22,31 +22,33 @@ type imResponseFull struct {
 
 // IM contains information related to the Direct Message channel
 type IM struct {
-	conversation
-	IsIM          bool   `json:"is_im"`
-	User          string `json:"user"`
-	IsUserDeleted bool   `json:"is_user_deleted"`
+	Conversation
+	IsUserDeleted bool `json:"is_user_deleted"`
 }
 
-func imRequest(path string, values url.Values, debug bool) (*imResponseFull, error) {
+func (api *Client) imRequest(ctx context.Context, path string, values url.Values) (*imResponseFull, error) {
 	response := &imResponseFull{}
-	err := post(path, values, response, debug)
+	err := api.postMethod(ctx, path, values, response)
 	if err != nil {
 		return nil, err
 	}
-	if !response.Ok {
-		return nil, errors.New(response.Error)
-	}
-	return response, nil
+
+	return response, response.Err()
 }
 
 // CloseIMChannel closes the direct message channel
 func (api *Client) CloseIMChannel(channel string) (bool, bool, error) {
+	return api.CloseIMChannelContext(context.Background(), channel)
+}
+
+// CloseIMChannelContext closes the direct message channel with a custom context
+func (api *Client) CloseIMChannelContext(ctx context.Context, channel string) (bool, bool, error) {
 	values := url.Values{
-		"token":   {api.config.token},
+		"token":   {api.token},
 		"channel": {channel},
 	}
-	response, err := imRequest("im.close", values, api.debug)
+
+	response, err := api.imRequest(ctx, "im.close", values)
 	if err != nil {
 		return false, false, err
 	}
@@ -56,11 +58,18 @@ func (api *Client) CloseIMChannel(channel string) (bool, bool, error) {
 // OpenIMChannel opens a direct message channel to the user provided as argument
 // Returns some status and the channel ID
 func (api *Client) OpenIMChannel(user string) (bool, bool, string, error) {
+	return api.OpenIMChannelContext(context.Background(), user)
+}
+
+// OpenIMChannelContext opens a direct message channel to the user provided as argument with a custom context
+// Returns some status and the channel ID
+func (api *Client) OpenIMChannelContext(ctx context.Context, user string) (bool, bool, string, error) {
 	values := url.Values{
-		"token": {api.config.token},
+		"token": {api.token},
 		"user":  {user},
 	}
-	response, err := imRequest("im.open", values, api.debug)
+
+	response, err := api.imRequest(ctx, "im.open", values)
 	if err != nil {
 		return false, false, "", err
 	}
@@ -69,22 +78,30 @@ func (api *Client) OpenIMChannel(user string) (bool, bool, string, error) {
 
 // MarkIMChannel sets the read mark of a direct message channel to a specific point
 func (api *Client) MarkIMChannel(channel, ts string) (err error) {
+	return api.MarkIMChannelContext(context.Background(), channel, ts)
+}
+
+// MarkIMChannelContext sets the read mark of a direct message channel to a specific point with a custom context
+func (api *Client) MarkIMChannelContext(ctx context.Context, channel, ts string) error {
 	values := url.Values{
-		"token":   {api.config.token},
+		"token":   {api.token},
 		"channel": {channel},
 		"ts":      {ts},
 	}
-	_, err = imRequest("im.mark", values, api.debug)
-	if err != nil {
-		return err
-	}
-	return
+
+	_, err := api.imRequest(ctx, "im.mark", values)
+	return err
 }
 
 // GetIMHistory retrieves the direct message channel history
 func (api *Client) GetIMHistory(channel string, params HistoryParameters) (*History, error) {
+	return api.GetIMHistoryContext(context.Background(), channel, params)
+}
+
+// GetIMHistoryContext retrieves the direct message channel history with a custom context
+func (api *Client) GetIMHistoryContext(ctx context.Context, channel string, params HistoryParameters) (*History, error) {
 	values := url.Values{
-		"token":   {api.config.token},
+		"token":   {api.token},
 		"channel": {channel},
 	}
 	if params.Latest != DEFAULT_HISTORY_LATEST {
@@ -110,7 +127,8 @@ func (api *Client) GetIMHistory(channel string, params HistoryParameters) (*Hist
 			values.Add("unreads", "0")
 		}
 	}
-	response, err := imRequest("im.history", values, api.debug)
+
+	response, err := api.imRequest(ctx, "im.history", values)
 	if err != nil {
 		return nil, err
 	}
@@ -119,10 +137,16 @@ func (api *Client) GetIMHistory(channel string, params HistoryParameters) (*Hist
 
 // GetIMChannels returns the list of direct message channels
 func (api *Client) GetIMChannels() ([]IM, error) {
+	return api.GetIMChannelsContext(context.Background())
+}
+
+// GetIMChannelsContext returns the list of direct message channels with a custom context
+func (api *Client) GetIMChannelsContext(ctx context.Context) ([]IM, error) {
 	values := url.Values{
-		"token": {api.config.token},
+		"token": {api.token},
 	}
-	response, err := imRequest("im.list", values, api.debug)
+
+	response, err := api.imRequest(ctx, "im.list", values)
 	if err != nil {
 		return nil, err
 	}

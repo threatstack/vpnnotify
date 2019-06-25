@@ -13,15 +13,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nlopes/slack"
-	"gopkg.in/ldap.v2"
-	"gopkg.in/redis.v5"
 	"io/ioutil"
 	"net"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nlopes/slack"
+	"gopkg.in/ldap.v2"
+	"gopkg.in/redis.v5"
 )
 
 // whatEnv - determines if you're VPNing into DEV or PROD depending on the
@@ -71,25 +72,28 @@ func NewConfig(fname string) VPNNotifyConfig {
 
 // updateState - updates the Redis database with the last time we saw an IP
 // connect for a particular user.
-func updateState(rcli *redis.Client, lt time.Time, common_name string, untrusted_ip string) {
-	err := rcli.Set(fmt.Sprintf("vpn:%s:lastip", common_name), untrusted_ip, 0).Err()
+func updateState(rcli *redis.Client, lt time.Time, commonName string, untrustedIP string) {
+	err := rcli.Set(fmt.Sprintf("vpn:%s:lastip", commonName), untrustedIP, 0).Err()
 	if err != nil {
-		fmt.Printf("%s VPNNotify: %s couldnt save to redis: %s \n", lt.Format("Mon Jan _2 15:04:05 2006"), common_name, err)
+		fmt.Printf("%s VPNNotify: %s couldnt save to redis: %s \n", lt.Format("Mon Jan _2 15:04:05 2006"), commonName, err)
 	}
-	err = rcli.Set(fmt.Sprintf("vpn:%s:lasttime", common_name), int64(lt.Unix()), 0).Err()
+	err = rcli.Set(fmt.Sprintf("vpn:%s:lasttime", commonName), int64(lt.Unix()), 0).Err()
 	if err != nil {
-		fmt.Printf("%s VPNNotify: %s couldnt save to redis: %s \n", lt.Format("Mon Jan _2 15:04:05 2006"), common_name, err)
+		fmt.Printf("%s VPNNotify: %s couldnt save to redis: %s \n", lt.Format("Mon Jan _2 15:04:05 2006"), commonName, err)
 	}
 }
 
 // sendSlack - send a slack message to a user informing them of a VPN login.
 func sendSlack(key string, recipient string, message string) (err error) {
 	api := slack.New(key)
-	params := slack.PostMessageParameters{}
-	params.AsUser = true
+	opts := slack.MsgOptionCompose(
+		slack.MsgOptionAsUser(true),
+		slack.MsgOptionDisableLinkUnfurl(),
+		slack.MsgOptionText(message, false),
+	)
 
 	// Fire message
-	channelID, timestamp, err := api.PostMessage(recipient, message, params)
+	channelID, timestamp, err := api.PostMessage(recipient, opts)
 	if err != nil {
 		return err
 	}
@@ -106,7 +110,7 @@ func sendSlack(key string, recipient string, message string) (err error) {
 
 // getSlackName - Get a user's Slack name from LDAP. This requires a new LDAP
 // schema entry -- see documentation.
-func getSlackName(config VPNNotifyConfig, common_name string) (name string, err error) {
+func getSlackName(config VPNNotifyConfig, commonName string) (name string, err error) {
 	conntimeout := time.Duration(5) * time.Second
 	server, err := net.DialTimeout("tcp",
 		fmt.Sprintf("%s:%d", config.LDAPServer, config.LDAPPort), conntimeout)
@@ -134,7 +138,7 @@ func getSlackName(config VPNNotifyConfig, common_name string) (name string, err 
 	searchRequest := ldap.NewSearchRequest(
 		config.LDAPBaseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(%s=%s)", config.LDAPUserAttrib, common_name),
+		fmt.Sprintf("(%s=%s)", config.LDAPUserAttrib, commonName),
 		[]string{"slackName"},
 		nil,
 	)

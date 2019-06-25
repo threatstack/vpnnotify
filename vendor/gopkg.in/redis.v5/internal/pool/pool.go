@@ -8,8 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gopkg.in/bsm/ratelimit.v1"
-
 	"gopkg.in/redis.v5/internal"
 )
 
@@ -21,7 +19,9 @@ var (
 
 var timers = sync.Pool{
 	New: func() interface{} {
-		return time.NewTimer(0)
+		t := time.NewTimer(time.Hour)
+		t.Stop()
+		return t
 	},
 }
 
@@ -43,15 +43,13 @@ type Pooler interface {
 	FreeLen() int
 	Stats() *Stats
 	Close() error
-	Closed() bool
 }
 
 type dialer func() (net.Conn, error)
 
 type ConnPool struct {
-	_dial       dialer
-	DialLimiter *ratelimit.RateLimiter
-	OnClose     func(*Conn) error
+	dial    dialer
+	OnClose func(*Conn) error
 
 	poolTimeout time.Duration
 	idleTimeout time.Duration
@@ -74,8 +72,7 @@ var _ Pooler = (*ConnPool)(nil)
 
 func NewConnPool(dial dialer, poolSize int, poolTimeout, idleTimeout, idleCheckFrequency time.Duration) *ConnPool {
 	p := &ConnPool{
-		_dial:       dial,
-		DialLimiter: ratelimit.New(3*poolSize, time.Second),
+		dial: dial,
 
 		poolTimeout: poolTimeout,
 		idleTimeout: idleTimeout,
@@ -90,23 +87,6 @@ func NewConnPool(dial dialer, poolSize int, poolTimeout, idleTimeout, idleCheckF
 	return p
 }
 
-func (p *ConnPool) dial() (net.Conn, error) {
-	if p.DialLimiter != nil && p.DialLimiter.Limit() {
-		err := fmt.Errorf(
-			"redis: you open connections too fast (last_error=%q)",
-			p.loadLastErr(),
-		)
-		return nil, err
-	}
-
-	cn, err := p._dial()
-	if err != nil {
-		p.storeLastErr(err.Error())
-		return nil, err
-	}
-	return cn, nil
-}
-
 func (p *ConnPool) NewConn() (*Conn, error) {
 	netConn, err := p.dial()
 	if err != nil {
@@ -117,12 +97,13 @@ func (p *ConnPool) NewConn() (*Conn, error) {
 
 func (p *ConnPool) PopFree() *Conn {
 	timer := timers.Get().(*time.Timer)
-	if !timer.Reset(p.poolTimeout) {
-		<-timer.C
-	}
+	timer.Reset(p.poolTimeout)
 
 	select {
 	case p.queue <- struct{}{}:
+		if !timer.Stop() {
+			<-timer.C
+		}
 		timers.Put(timer)
 	case <-timer.C:
 		timers.Put(timer)
@@ -153,19 +134,20 @@ func (p *ConnPool) popFree() *Conn {
 
 // Get returns existed connection from the pool or creates a new one.
 func (p *ConnPool) Get() (*Conn, bool, error) {
-	if p.Closed() {
+	if p.closed() {
 		return nil, false, ErrClosed
 	}
 
 	atomic.AddUint32(&p.stats.Requests, 1)
 
 	timer := timers.Get().(*time.Timer)
-	if !timer.Reset(p.poolTimeout) {
-		<-timer.C
-	}
+	timer.Reset(p.poolTimeout)
 
 	select {
 	case p.queue <- struct{}{}:
+		if !timer.Stop() {
+			<-timer.C
+		}
 		timers.Put(timer)
 	case <-timer.C:
 		timers.Put(timer)
@@ -262,23 +244,23 @@ func (p *ConnPool) Stats() *Stats {
 	}
 }
 
-func (p *ConnPool) Closed() bool {
+func (p *ConnPool) closed() bool {
 	return atomic.LoadInt32(&p._closed) == 1
 }
 
-func (p *ConnPool) Close() (retErr error) {
+func (p *ConnPool) Close() error {
 	if !atomic.CompareAndSwapInt32(&p._closed, 0, 1) {
 		return ErrClosed
 	}
 
 	p.connsMu.Lock()
-	// Close all connections.
+	var firstErr error
 	for _, cn := range p.conns {
 		if cn == nil {
 			continue
 		}
-		if err := p.closeConn(cn, ErrClosed); err != nil && retErr == nil {
-			retErr = err
+		if err := p.closeConn(cn, ErrClosed); err != nil && firstErr == nil {
+			firstErr = err
 		}
 	}
 	p.conns = nil
@@ -288,11 +270,10 @@ func (p *ConnPool) Close() (retErr error) {
 	p.freeConns = nil
 	p.freeConnsMu.Unlock()
 
-	return retErr
+	return firstErr
 }
 
 func (p *ConnPool) closeConn(cn *Conn, reason error) error {
-	p.storeLastErr(reason.Error())
 	if p.OnClose != nil {
 		_ = p.OnClose(cn)
 	}
@@ -340,7 +321,7 @@ func (p *ConnPool) reaper(frequency time.Duration) {
 	defer ticker.Stop()
 
 	for _ = range ticker.C {
-		if p.Closed() {
+		if p.closed() {
 			break
 		}
 		n, err := p.ReapStaleConns()
@@ -354,17 +335,6 @@ func (p *ConnPool) reaper(frequency time.Duration) {
 			n, s.TotalConns, s.FreeConns, s.Requests, s.Hits, s.Timeouts,
 		)
 	}
-}
-
-func (p *ConnPool) storeLastErr(err string) {
-	p.lastErr.Store(err)
-}
-
-func (p *ConnPool) loadLastErr() string {
-	if v := p.lastErr.Load(); v != nil {
-		return v.(string)
-	}
-	return ""
 }
 
 //------------------------------------------------------------------------------

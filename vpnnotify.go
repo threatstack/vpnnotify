@@ -8,16 +8,18 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
-	"github.com/oschwald/geoip2-golang"
-	"gopkg.in/redis.v5"
 	"net"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/oschwald/geoip2-golang"
+	"gopkg.in/redis.v5"
 )
 
-// Configuration options for VPNNotify
+// VPNNotifyConfig - Configuration options for VPNNotify
 type VPNNotifyConfig struct {
 	GeoIPEnabled   bool
 	GeoIPPath      string
@@ -30,6 +32,7 @@ type VPNNotifyConfig struct {
 	RedisPassword  string
 	RedisPort      int
 	RedisServer    string
+	RedisTLS       bool
 	RenotifyTime   int64
 	SlackKey       string
 	TemplatePath   string
@@ -52,7 +55,7 @@ func main() {
 	// We'll use this for the invication time
 	logtime := time.Now()
 
-	// common_name and untrusted_ip are passed as environment variables from
+	// commonName and untrustedIP are passed as environment variables from
 	// OpenVPN. Exit gracefully if they dont exist, as to not cause any problems
 	// if they dont exist.
 	if os.Getenv("common_name") == "" {
@@ -61,22 +64,30 @@ func main() {
 	if os.Getenv("untrusted_ip") == "" {
 		os.Exit(0)
 	}
-	common_name := os.Getenv("common_name")
-	untrusted_ip := os.Getenv("untrusted_ip")
+	commonName := os.Getenv("common_name")
+	untrustedIP := os.Getenv("untrusted_ip")
 
 	// Figure out if this is in DEV or PROD. See helpers.go.
 	environment := whatEnv()
 
 	// Writing some data to Redis to capture last IP address. We'll only tell a
 	// user about a login after a certain number of seconds.
-	rcli := redis.NewClient(&redis.Options{
+	rOpts := &redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", config.RedisServer, config.RedisPort),
 		Password: config.RedisPassword, // no password set
 		DB:       config.RedisDB,       // use DB for this (default is 0)
-	})
+	}
+
+	if config.RedisTLS {
+		rOpts.TLSConfig = &tls.Config{
+			ServerName: config.RedisServer,
+		}
+	}
+
+	rcli := redis.NewClient(rOpts)
 
 	// Get last IP from Redis
-	lastip, err := rcli.Get(fmt.Sprintf("vpn:%s:lastip", common_name)).Result()
+	lastip, err := rcli.Get(fmt.Sprintf("vpn:%s:lastip", commonName)).Result()
 	if err == redis.Nil {
 		lastip = ""
 	} else if err != nil {
@@ -84,7 +95,7 @@ func main() {
 	}
 
 	// Get last login time from Redis
-	lasttime, err := rcli.Get(fmt.Sprintf("vpn:%s:lasttime", common_name)).Result()
+	lasttime, err := rcli.Get(fmt.Sprintf("vpn:%s:lasttime", commonName)).Result()
 	if err == redis.Nil {
 		lasttime = ""
 	} else if err != nil {
@@ -92,19 +103,19 @@ func main() {
 	}
 
 	// Compare the last IP to the one logging in now.
-	if lastip == untrusted_ip {
+	if lastip == untrustedIP {
 		// time math: did it happen within the last 3900 seconds
 		ltime, _ := strconv.ParseInt(lasttime, 10, 32)
 		timesincelastvpn := int64(logtime.Unix()) - ltime
 		if timesincelastvpn < config.RenotifyTime {
 			// reset the timer, print a message to openvpn.log and skip the rest.
-			updateState(rcli, logtime, common_name, untrusted_ip)
-			fmt.Printf("%s VPNNotify: %s login message supressed due to login in last 2 hours\n", logtime.Format("Mon Jan _2 15:04:05 2006"), common_name)
+			updateState(rcli, logtime, commonName, untrustedIP)
+			fmt.Printf("%s VPNNotify: %s login message supressed due to login in last 2 hours\n", logtime.Format("Mon Jan _2 15:04:05 2006"), commonName)
 			os.Exit(0)
 		}
 	}
 	// We're continuing, so save the last IP and time.
-	updateState(rcli, logtime, common_name, untrusted_ip)
+	updateState(rcli, logtime, commonName, untrustedIP)
 
 	// If we're using GeoIP, get GeoIP info
 	var geo *geoip2.City
@@ -114,7 +125,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		geo, err = db.City(net.ParseIP(untrusted_ip))
+		geo, err = db.City(net.ParseIP(untrustedIP))
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -122,10 +133,10 @@ func main() {
 	}
 
 	// Build slack notification
-	slackmsg := makeMessage(config, logtime, environment, geo, untrusted_ip)
+	slackmsg := makeMessage(config, logtime, environment, geo, untrustedIP)
 
 	// Figure out who we're sending it to
-	slackuser, err := getSlackName(config, common_name)
+	slackuser, err := getSlackName(config, commonName)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}

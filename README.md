@@ -65,6 +65,7 @@ Here's a sample configuration file:
   "RedisPassword": "seCretsRc00l",
   "RedisPort": 6379,
   "RedisServer": "redis.cool.io",
+  "RedisTLS": true,
   "RenotifyTime": 7200,
   "SlackKey": "xozz-blah-moreblah",
   "TemplatePath": "/etc/vpnnotify.msg"
@@ -85,6 +86,7 @@ Here's a sample configuration file:
 | RedisPassword  | String | A password for Redis                                       | secret                           |
 | RedisPort      | Int    | A port for Redis                                           | 6379                             |
 | RedisServer    | String | FQDN for the Redis Server                                  | redis.cool.io                    |
+| RedisTLS       | Bool   | Attempt to talk to Redis using TLS                         | true, false                      |
 | RenotifyTime   | Int    | Number of seconds to not renotify a user if from same IP   | 7200                             |
 | SlackKey       | String | The key for Slack                                          | xozz-...                         |
 | TemplatePath   | String | A path to a go template file                               | /etc/vpnnotify.msg               |
