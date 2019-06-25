@@ -47,16 +47,19 @@ type Cmdable interface {
 	Ping() *StatusCmd
 	Quit() *StatusCmd
 	Del(keys ...string) *IntCmd
+	Unlink(keys ...string) *IntCmd
 	Dump(key string) *StringCmd
 	Exists(key string) *BoolCmd
+	// TODO: merge with Exists in v6
+	ExistsMulti(keys ...string) *IntCmd
 	Expire(key string, expiration time.Duration) *BoolCmd
 	ExpireAt(key string, tm time.Time) *BoolCmd
 	Keys(pattern string) *StringSliceCmd
 	Migrate(host, port, key string, db int64, timeout time.Duration) *StatusCmd
 	Move(key string, db int64) *BoolCmd
-	ObjectRefCount(keys ...string) *IntCmd
-	ObjectEncoding(keys ...string) *StringCmd
-	ObjectIdleTime(keys ...string) *DurationCmd
+	ObjectRefCount(key string) *IntCmd
+	ObjectEncoding(key string) *StringCmd
+	ObjectIdleTime(key string) *DurationCmd
 	Persist(key string) *BoolCmd
 	PExpire(key string, expiration time.Duration) *BoolCmd
 	PExpireAt(key string, tm time.Time) *BoolCmd
@@ -70,10 +73,10 @@ type Cmdable interface {
 	SortInterfaces(key string, sort Sort) *SliceCmd
 	TTL(key string) *DurationCmd
 	Type(key string) *StatusCmd
-	Scan(cursor uint64, match string, count int64) Scanner
-	SScan(key string, cursor uint64, match string, count int64) Scanner
-	HScan(key string, cursor uint64, match string, count int64) Scanner
-	ZScan(key string, cursor uint64, match string, count int64) Scanner
+	Scan(cursor uint64, match string, count int64) *ScanCmd
+	SScan(key string, cursor uint64, match string, count int64) *ScanCmd
+	HScan(key string, cursor uint64, match string, count int64) *ScanCmd
+	ZScan(key string, cursor uint64, match string, count int64) *ScanCmd
 	Append(key, value string) *IntCmd
 	BitCount(key string, bitCount *BitCount) *IntCmd
 	BitOpAnd(destKey string, keys ...string) *IntCmd
@@ -109,8 +112,8 @@ type Cmdable interface {
 	HLen(key string) *IntCmd
 	HMGet(key string, fields ...string) *SliceCmd
 	HMSet(key string, fields map[string]string) *StatusCmd
-	HSet(key, field, value string) *BoolCmd
-	HSetNX(key, field, value string) *BoolCmd
+	HSet(key, field string, value interface{}) *BoolCmd
+	HSetNX(key, field string, value interface{}) *BoolCmd
 	HVals(key string) *StringSliceCmd
 	BLPop(timeout time.Duration, keys ...string) *StringSliceCmd
 	BRPop(timeout time.Duration, keys ...string) *StringSliceCmd
@@ -169,6 +172,7 @@ type Cmdable interface {
 	ZRem(key string, members ...interface{}) *IntCmd
 	ZRemRangeByRank(key string, start, stop int64) *IntCmd
 	ZRemRangeByScore(key, min, max string) *IntCmd
+	ZRemRangeByLex(key, min, max string) *IntCmd
 	ZRevRange(key string, start, stop int64) *StringSliceCmd
 	ZRevRangeWithScores(key string, start, stop int64) *ZSliceCmd
 	ZRevRangeByScore(key string, opt ZRangeBy) *StringSliceCmd
@@ -185,7 +189,6 @@ type Cmdable interface {
 	ClientKill(ipPort string) *StatusCmd
 	ClientList() *StringCmd
 	ClientPause(dur time.Duration) *BoolCmd
-	ClientSetName(name string) *BoolCmd
 	ConfigGet(parameter string) *SliceCmd
 	ConfigResetStat() *StatusCmd
 	ConfigSet(parameter, value string) *StatusCmd
@@ -199,7 +202,7 @@ type Cmdable interface {
 	ShutdownSave() *StatusCmd
 	ShutdownNoSave() *StatusCmd
 	SlaveOf(host, port string) *StatusCmd
-	Time() *StringSliceCmd
+	Time() *TimeCmd
 	Eval(script string, keys []string, args ...interface{}) *Cmd
 	EvalSha(sha1 string, keys []string, args ...interface{}) *Cmd
 	ScriptExists(scripts ...string) *BoolSliceCmd
@@ -237,16 +240,13 @@ type Cmdable interface {
 	Command() *CommandsInfoCmd
 }
 
+var _ Cmdable = (*Client)(nil)
+var _ Cmdable = (*Tx)(nil)
+var _ Cmdable = (*Ring)(nil)
+var _ Cmdable = (*ClusterClient)(nil)
+
 type cmdable struct {
 	process func(cmd Cmder) error
-}
-
-// WrapProcess replaces the process func. It takes a function createWrapper
-// which is supplied by the user. createWrapper takes the old process func as
-// an input and returns the new wrapper process func. createWrapper should
-// use call the old process func within the new process func.
-func (c *cmdable) WrapProcess(createWrapper func(oldProcess func(cmd Cmder) error) func(cmd Cmder) error) {
-	c.process = createWrapper(c.process)
 }
 
 type statefulCmdable struct {
@@ -269,6 +269,13 @@ func (c *cmdable) Echo(message interface{}) *StringCmd {
 
 func (c *cmdable) Ping() *StatusCmd {
 	cmd := NewStatusCmd("ping")
+	c.process(cmd)
+	return cmd
+}
+
+func (c *cmdable) Wait(numSlaves int, timeout time.Duration) *IntCmd {
+
+	cmd := NewIntCmd("wait", numSlaves, int(timeout/time.Millisecond))
 	c.process(cmd)
 	return cmd
 }
@@ -296,6 +303,17 @@ func (c *cmdable) Del(keys ...string) *IntCmd {
 	return cmd
 }
 
+func (c *cmdable) Unlink(keys ...string) *IntCmd {
+	args := make([]interface{}, 1+len(keys))
+	args[0] = "unlink"
+	for i, key := range keys {
+		args[1+i] = key
+	}
+	cmd := NewIntCmd(args...)
+	c.process(cmd)
+	return cmd
+}
+
 func (c *cmdable) Dump(key string) *StringCmd {
 	cmd := NewStringCmd("dump", key)
 	c.process(cmd)
@@ -304,6 +322,17 @@ func (c *cmdable) Dump(key string) *StringCmd {
 
 func (c *cmdable) Exists(key string) *BoolCmd {
 	cmd := NewBoolCmd("exists", key)
+	c.process(cmd)
+	return cmd
+}
+
+func (c *cmdable) ExistsMulti(keys ...string) *IntCmd {
+	args := make([]interface{}, 1+len(keys))
+	args[0] = "exists"
+	for i, key := range keys {
+		args[1+i] = key
+	}
+	cmd := NewIntCmd(args...)
 	c.process(cmd)
 	return cmd
 }
@@ -346,38 +375,20 @@ func (c *cmdable) Move(key string, db int64) *BoolCmd {
 	return cmd
 }
 
-func (c *cmdable) ObjectRefCount(keys ...string) *IntCmd {
-	args := make([]interface{}, 2+len(keys))
-	args[0] = "object"
-	args[1] = "refcount"
-	for i, key := range keys {
-		args[2+i] = key
-	}
-	cmd := NewIntCmd(args...)
+func (c *cmdable) ObjectRefCount(key string) *IntCmd {
+	cmd := NewIntCmd("object", "refcount", key)
 	c.process(cmd)
 	return cmd
 }
 
-func (c *cmdable) ObjectEncoding(keys ...string) *StringCmd {
-	args := make([]interface{}, 2+len(keys))
-	args[0] = "object"
-	args[1] = "encoding"
-	for i, key := range keys {
-		args[2+i] = key
-	}
-	cmd := NewStringCmd(args...)
+func (c *cmdable) ObjectEncoding(key string) *StringCmd {
+	cmd := NewStringCmd("object", "encoding", key)
 	c.process(cmd)
 	return cmd
 }
 
-func (c *cmdable) ObjectIdleTime(keys ...string) *DurationCmd {
-	args := make([]interface{}, 2+len(keys))
-	args[0] = "object"
-	args[1] = "idletime"
-	for i, key := range keys {
-		args[2+i] = key
-	}
-	cmd := NewDurationCmd(time.Second, args...)
+func (c *cmdable) ObjectIdleTime(key string) *DurationCmd {
+	cmd := NewDurationCmd(time.Second, "object", "idletime", key)
 	c.process(cmd)
 	return cmd
 }
@@ -507,7 +518,7 @@ func (c *cmdable) Type(key string) *StatusCmd {
 	return cmd
 }
 
-func (c *cmdable) Scan(cursor uint64, match string, count int64) Scanner {
+func (c *cmdable) Scan(cursor uint64, match string, count int64) *ScanCmd {
 	args := []interface{}{"scan", cursor}
 	if match != "" {
 		args = append(args, "match", match)
@@ -515,15 +526,12 @@ func (c *cmdable) Scan(cursor uint64, match string, count int64) Scanner {
 	if count > 0 {
 		args = append(args, "count", count)
 	}
-	cmd := NewScanCmd(args...)
+	cmd := NewScanCmd(c.process, args...)
 	c.process(cmd)
-	return Scanner{
-		client:  c,
-		ScanCmd: cmd,
-	}
+	return cmd
 }
 
-func (c *cmdable) SScan(key string, cursor uint64, match string, count int64) Scanner {
+func (c *cmdable) SScan(key string, cursor uint64, match string, count int64) *ScanCmd {
 	args := []interface{}{"sscan", key, cursor}
 	if match != "" {
 		args = append(args, "match", match)
@@ -531,15 +539,12 @@ func (c *cmdable) SScan(key string, cursor uint64, match string, count int64) Sc
 	if count > 0 {
 		args = append(args, "count", count)
 	}
-	cmd := NewScanCmd(args...)
+	cmd := NewScanCmd(c.process, args...)
 	c.process(cmd)
-	return Scanner{
-		client:  c,
-		ScanCmd: cmd,
-	}
+	return cmd
 }
 
-func (c *cmdable) HScan(key string, cursor uint64, match string, count int64) Scanner {
+func (c *cmdable) HScan(key string, cursor uint64, match string, count int64) *ScanCmd {
 	args := []interface{}{"hscan", key, cursor}
 	if match != "" {
 		args = append(args, "match", match)
@@ -547,15 +552,12 @@ func (c *cmdable) HScan(key string, cursor uint64, match string, count int64) Sc
 	if count > 0 {
 		args = append(args, "count", count)
 	}
-	cmd := NewScanCmd(args...)
+	cmd := NewScanCmd(c.process, args...)
 	c.process(cmd)
-	return Scanner{
-		client:  c,
-		ScanCmd: cmd,
-	}
+	return cmd
 }
 
-func (c *cmdable) ZScan(key string, cursor uint64, match string, count int64) Scanner {
+func (c *cmdable) ZScan(key string, cursor uint64, match string, count int64) *ScanCmd {
 	args := []interface{}{"zscan", key, cursor}
 	if match != "" {
 		args = append(args, "match", match)
@@ -563,12 +565,9 @@ func (c *cmdable) ZScan(key string, cursor uint64, match string, count int64) Sc
 	if count > 0 {
 		args = append(args, "count", count)
 	}
-	cmd := NewScanCmd(args...)
+	cmd := NewScanCmd(c.process, args...)
 	c.process(cmd)
-	return Scanner{
-		client:  c,
-		ScanCmd: cmd,
-	}
+	return cmd
 }
 
 //------------------------------------------------------------------------------
@@ -735,6 +734,7 @@ func (c *cmdable) MSetNX(pairs ...interface{}) *BoolCmd {
 
 // Redis `SET key value [expiration]` command.
 //
+// Use expiration for `SETEX`-like behavior.
 // Zero expiration means the key has no expiration time.
 func (c *cmdable) Set(key string, value interface{}, expiration time.Duration) *StatusCmd {
 	args := make([]interface{}, 3, 4)
@@ -788,10 +788,14 @@ func (c *cmdable) SetNX(key string, value interface{}, expiration time.Duration)
 // Zero expiration means the key has no expiration time.
 func (c *cmdable) SetXX(key string, value interface{}, expiration time.Duration) *BoolCmd {
 	var cmd *BoolCmd
-	if usePrecise(expiration) {
-		cmd = NewBoolCmd("set", key, value, "px", formatMs(expiration), "xx")
+	if expiration == 0 {
+		cmd = NewBoolCmd("set", key, value, "xx")
 	} else {
-		cmd = NewBoolCmd("set", key, value, "ex", formatSec(expiration), "xx")
+		if usePrecise(expiration) {
+			cmd = NewBoolCmd("set", key, value, "px", formatMs(expiration), "xx")
+		} else {
+			cmd = NewBoolCmd("set", key, value, "ex", formatSec(expiration), "xx")
+		}
 	}
 	c.process(cmd)
 	return cmd
@@ -892,13 +896,13 @@ func (c *cmdable) HMSet(key string, fields map[string]string) *StatusCmd {
 	return cmd
 }
 
-func (c *cmdable) HSet(key, field, value string) *BoolCmd {
+func (c *cmdable) HSet(key, field string, value interface{}) *BoolCmd {
 	cmd := NewBoolCmd("hset", key, field, value)
 	c.process(cmd)
 	return cmd
 }
 
-func (c *cmdable) HSetNX(key, field, value string) *BoolCmd {
+func (c *cmdable) HSetNX(key, field string, value interface{}) *BoolCmd {
 	cmd := NewBoolCmd("hsetnx", key, field, value)
 	c.process(cmd)
 	return cmd
@@ -1468,6 +1472,12 @@ func (c *cmdable) ZRemRangeByScore(key, min, max string) *IntCmd {
 	return cmd
 }
 
+func (c *cmdable) ZRemRangeByLex(key, min, max string) *IntCmd {
+	cmd := NewIntCmd("zremrangebylex", key, min, max)
+	c.process(cmd)
+	return cmd
+}
+
 func (c *cmdable) ZRevRange(key string, start, stop int64) *StringSliceCmd {
 	cmd := NewStringSliceCmd("zrevrange", key, start, stop)
 	c.process(cmd)
@@ -1621,15 +1631,15 @@ func (c *cmdable) ClientPause(dur time.Duration) *BoolCmd {
 	return cmd
 }
 
-// ClientSetName assigns a name to the one of many connections in the pool.
-func (c *cmdable) ClientSetName(name string) *BoolCmd {
+// ClientSetName assigns a name to the connection.
+func (c *statefulCmdable) ClientSetName(name string) *BoolCmd {
 	cmd := NewBoolCmd("client", "setname", name)
 	c.process(cmd)
 	return cmd
 }
 
-// ClientGetName returns the name of the one of many connections in the pool.
-func (c *Client) ClientGetName() *StringCmd {
+// ClientGetName returns the name of the connection.
+func (c *statefulCmdable) ClientGetName() *StringCmd {
 	cmd := NewStringCmd("client", "getname")
 	c.process(cmd)
 	return cmd
@@ -1741,9 +1751,8 @@ func (c *cmdable) Sync() {
 	panic("not implemented")
 }
 
-// TODO: add TimeCmd and use it here
-func (c *cmdable) Time() *StringSliceCmd {
-	cmd := NewStringSliceCmd("time")
+func (c *cmdable) Time() *TimeCmd {
+	cmd := NewTimeCmd("time")
 	c.process(cmd)
 	return cmd
 }

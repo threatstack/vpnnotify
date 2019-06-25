@@ -1,11 +1,13 @@
 package redis
 
 import (
+	"errors"
 	"sync"
 
-	"gopkg.in/redis.v5/internal"
 	"gopkg.in/redis.v5/internal/pool"
 )
+
+type pipelineExecer func([]Cmder) error
 
 // Pipeline implements pipelining as described in
 // http://redis.io/topics/pipelining. It's safe for concurrent use
@@ -14,7 +16,7 @@ type Pipeline struct {
 	cmdable
 	statefulCmdable
 
-	exec func([]Cmder) error
+	exec pipelineExecer
 
 	mu     sync.Mutex
 	cmds   []Cmder
@@ -59,15 +61,15 @@ func (c *Pipeline) discard() error {
 // Exec always returns list of commands and error of the first failed
 // command if any.
 func (c *Pipeline) Exec() ([]Cmder, error) {
-	defer c.mu.Unlock()
 	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	if c.closed {
 		return nil, pool.ErrClosed
 	}
 
 	if len(c.cmds) == 0 {
-		return c.cmds, nil
+		return nil, errors.New("redis: pipeline is empty")
 	}
 
 	cmds := c.cmds
@@ -83,25 +85,4 @@ func (c *Pipeline) pipelined(fn func(*Pipeline) error) ([]Cmder, error) {
 	cmds, err := c.Exec()
 	_ = c.Close()
 	return cmds, err
-}
-
-func execCmds(cn *pool.Conn, cmds []Cmder) (retry bool, firstErr error) {
-	if err := writeCmd(cn, cmds...); err != nil {
-		setCmdsErr(cmds, err)
-		return true, err
-	}
-
-	for i, cmd := range cmds {
-		err := cmd.readReply(cn)
-		if err == nil {
-			continue
-		}
-		if i == 0 && internal.IsNetworkError(err) {
-			return true, err
-		}
-		if firstErr == nil {
-			firstErr = err
-		}
-	}
-	return false, firstErr
 }

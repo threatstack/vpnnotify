@@ -3,95 +3,119 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "LgycO10DeSc2JRSEJEnXg6SfB0s=",
+			"checksumSHA1": "3ORLCzeT6ci2RkN0jo1bY6bmE8A=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "80c2d40e9b91f2ef7a9c1a403aeec64d1b89a9a6",
+			"revisionTime": "2019-04-27T04:03:06Z"
+		},
+		{
+			"checksumSHA1": "SVbA6mzTHwI00WgWjSQv+WptxqM=",
 			"path": "github.com/nlopes/slack",
-			"revision": "a1a63712460a18dbe828ae915f954a0f214f3d8e",
-			"revisionTime": "2016-10-03T12:27:58Z"
+			"revision": "2891986e2a3e7c60d4e660658e3bcd4d69934f4c",
+			"revisionTime": "2019-06-23T05:05:37Z"
 		},
 		{
-			"checksumSHA1": "ssdHHJsQomfjUFJAELnUNCK/9ck=",
+			"checksumSHA1": "DY2gOON8opda18Z2WGVMln4f/to=",
+			"path": "github.com/nlopes/slack/internal/errorsx",
+			"revision": "2891986e2a3e7c60d4e660658e3bcd4d69934f4c",
+			"revisionTime": "2019-06-23T05:05:37Z"
+		},
+		{
+			"checksumSHA1": "DQyknBX6eTRG2cz+UuXxU9ZFqPQ=",
+			"path": "github.com/nlopes/slack/internal/timex",
+			"revision": "2891986e2a3e7c60d4e660658e3bcd4d69934f4c",
+			"revisionTime": "2019-06-23T05:05:37Z"
+		},
+		{
+			"checksumSHA1": "gwieK+pNgdb6dgrdB8fynmN3mPg=",
+			"path": "github.com/nlopes/slack/slackutilsx",
+			"revision": "2891986e2a3e7c60d4e660658e3bcd4d69934f4c",
+			"revisionTime": "2019-06-23T05:05:37Z"
+		},
+		{
+			"checksumSHA1": "R8iVCn+XxUQPBicMcFQeG3AiXsA=",
 			"path": "github.com/oschwald/geoip2-golang",
-			"revision": "496a3cbcb65a3cb54497fe4ae2273319e85160a4",
-			"revisionTime": "2016-09-10T23:16:03Z"
+			"revision": "347ca45869a87337a71b11efe9b3043bc10df97f",
+			"revisionTime": "2019-05-09T22:04:26Z"
 		},
 		{
-			"checksumSHA1": "xmWd9nj+yZQ5TiHznuoyj4fkknk=",
+			"checksumSHA1": "Ye5I1L15nbx4F+CfYO2paTgUfCw=",
 			"path": "github.com/oschwald/maxminddb-golang",
-			"revision": "2af0544f8e032bc7a363e897fbd9c6ed4884a1d6",
-			"revisionTime": "2016-09-19T21:31:57Z"
+			"revision": "2905694a1b00c5574f1418a7dbf8a22a7d247559",
+			"revisionTime": "2019-05-30T01:51:12Z"
 		},
 		{
-			"checksumSHA1": "7EZyXN0EmZLgGxZxK01IJua4c8o=",
-			"path": "golang.org/x/net/websocket",
-			"revision": "b7883d29650d340156352196ef5e434db117757b",
-			"revisionTime": "2017-01-07T09:56:23Z"
+			"checksumSHA1": "I7hloldMJZTqUx6hbVDp5nk9fZQ=",
+			"path": "github.com/pkg/errors",
+			"revision": "27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7",
+			"revisionTime": "2019-02-27T00:00:51Z"
 		},
 		{
-			"checksumSHA1": "ltPsvPB1hRUFXj1W7SWFHVy1GjQ=",
+			"checksumSHA1": "t60T6bj1an7/8XE1xXjtTGNoSo0=",
+			"path": "github.com/threatstack/vpnnotify",
+			"revision": "94dc599d90d83d440e221f5e48927ed37928f031",
+			"revisionTime": "2018-04-05T15:30:39Z"
+		},
+		{
+			"checksumSHA1": "ndtoQbNCephdHyFqWH5GHNAE4a0=",
 			"path": "golang.org/x/sys/unix",
-			"revision": "67f277b6fe017c42fc3b4a445edc999dd99edd58",
-			"revisionTime": "2016-10-10T22:15:02Z"
+			"revision": "c5567b49c5d04a5f83870795b8c0e2df43a8ce32",
+			"revisionTime": "2019-06-24T11:44:31Z"
 		},
 		{
-			"checksumSHA1": "fpW2dhGFC6SrVzipJx7fjg2DIH8=",
+			"checksumSHA1": "fHxZYYJbqy8dddj7+eQsS5CrB6M=",
 			"path": "golang.org/x/sys/windows",
-			"revision": "67f277b6fe017c42fc3b4a445edc999dd99edd58",
-			"revisionTime": "2016-10-10T22:15:02Z"
+			"revision": "c5567b49c5d04a5f83870795b8c0e2df43a8ce32",
+			"revisionTime": "2019-06-24T11:44:31Z"
 		},
 		{
-			"checksumSHA1": "wSu8owMAP7GixsYoSZ4CmKUVhnU=",
+			"checksumSHA1": "byf5Y5rhCcKhBjzTk4yUkqfXr6c=",
 			"path": "gopkg.in/asn1-ber.v1",
-			"revision": "4e86f4367175e39f69d9358a5f17b4dda270378d",
-			"revisionTime": "2015-09-24T05:17:56Z"
+			"revision": "f715ec2f112d1e4195b827ad68cf44017a3ef2b1",
+			"revisionTime": "2018-10-15T20:05:46Z"
 		},
 		{
-			"checksumSHA1": "+4r0PnLwwyhO5/jvU5R/TEJb4kA=",
-			"path": "gopkg.in/bsm/ratelimit.v1",
-			"revision": "db14e161995a5177acef654cb0dd785e8ee8bc22",
-			"revisionTime": "2016-02-20T15:49:07Z"
-		},
-		{
-			"checksumSHA1": "7jPSjzw3mckHVQ2SjY4NvtIJR4g=",
+			"checksumSHA1": "IElTu6wDmpCv8h3JPXAHjuy0Gb8=",
 			"path": "gopkg.in/ldap.v2",
-			"revision": "d0a5ced67b4dc310b9158d63a2c6f9c5ec13f105",
-			"revisionTime": "2016-08-08T14:54:09Z"
+			"revision": "bb7a9ca6e4fbc2129e3db588a34bc970ffe811a9",
+			"revisionTime": "2017-11-23T04:56:18Z"
 		},
 		{
-			"checksumSHA1": "K7eQKUPxkpKI3TOsDjCrkrvOthg=",
+			"checksumSHA1": "OU/wHTJqhyQfyRnXMVWx1Ox06kQ=",
 			"path": "gopkg.in/redis.v5",
-			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
-			"revisionTime": "2016-10-14T11:21:25Z"
+			"revision": "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0",
+			"revisionTime": "2017-03-04T11:38:25Z"
 		},
 		{
-			"checksumSHA1": "vQSE4FOH4EvyzYA72w60XOetmVY=",
+			"checksumSHA1": "efyYmNqK7vcPhXW4KXfwbdA1wr4=",
 			"path": "gopkg.in/redis.v5/internal",
-			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
-			"revisionTime": "2016-10-14T11:21:25Z"
+			"revision": "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0",
+			"revisionTime": "2017-03-04T11:38:25Z"
 		},
 		{
 			"checksumSHA1": "2Ek4SixeRSKOX3mUiBMs3Aw+Guc=",
 			"path": "gopkg.in/redis.v5/internal/consistenthash",
-			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
-			"revisionTime": "2016-10-14T11:21:25Z"
+			"revision": "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0",
+			"revisionTime": "2017-03-04T11:38:25Z"
 		},
 		{
 			"checksumSHA1": "rJYVKcBrwYUGl7nuuusmZGrt8mY=",
 			"path": "gopkg.in/redis.v5/internal/hashtag",
-			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
-			"revisionTime": "2016-10-14T11:21:25Z"
+			"revision": "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0",
+			"revisionTime": "2017-03-04T11:38:25Z"
 		},
 		{
-			"checksumSHA1": "MuVVHw/uzk6gwBsQ8deMYacmgTM=",
+			"checksumSHA1": "zsH5BF9qc31R7eEEVYLsjbIigDQ=",
 			"path": "gopkg.in/redis.v5/internal/pool",
-			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
-			"revisionTime": "2016-10-14T11:21:25Z"
+			"revision": "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0",
+			"revisionTime": "2017-03-04T11:38:25Z"
 		},
 		{
-			"checksumSHA1": "94zp6E3FAG5jU66pK3fZl88aH/o=",
+			"checksumSHA1": "EqPdu5g8NhzxQOMCvzbreTQlzVE=",
 			"path": "gopkg.in/redis.v5/internal/proto",
-			"revision": "6f8957c5b7dece15d1ea5f592ec88f46ee2deffa",
-			"revisionTime": "2016-10-14T11:21:25Z"
+			"revision": "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0",
+			"revisionTime": "2017-03-04T11:38:25Z"
 		}
 	],
-	"rootPath": "gitlab.ops.threatstack.net/ops/vpnnotify"
+	"rootPath": "github.com/threatstack/vpnnotify"
 }

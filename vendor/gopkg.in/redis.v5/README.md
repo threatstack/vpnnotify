@@ -1,22 +1,23 @@
-# Redis client for Golang [![Build Status](https://travis-ci.org/go-redis/redis.png?branch=master)](https://travis-ci.org/go-redis/redis)
+# Redis client for Golang [![Build Status](https://travis-ci.org/go-redis/redis.png?branch=v5)](https://travis-ci.org/go-redis/redis)
 
 Supports:
 
 - Redis 3 commands except QUIT, MONITOR, SLOWLOG and SYNC.
-- [Pub/Sub](http://godoc.org/gopkg.in/redis.v5#PubSub).
-- [Transactions](http://godoc.org/gopkg.in/redis.v5#Multi).
-- [Pipelining](http://godoc.org/gopkg.in/redis.v5#Client.Pipeline).
-- [Scripting](http://godoc.org/gopkg.in/redis.v5#Script).
-- [Timeouts](http://godoc.org/gopkg.in/redis.v5#Options).
-- [Redis Sentinel](http://godoc.org/gopkg.in/redis.v5#NewFailoverClient).
-- [Redis Cluster](http://godoc.org/gopkg.in/redis.v5#NewClusterClient).
-- [Ring](http://godoc.org/gopkg.in/redis.v5#NewRing).
+- [Pub/Sub](https://godoc.org/gopkg.in/redis.v5#PubSub).
+- [Transactions](https://godoc.org/gopkg.in/redis.v5#Multi).
+- [Pipeline](https://godoc.org/gopkg.in/redis.v5#example-Client-Pipeline) and [TxPipeline](https://godoc.org/gopkg.in/redis.v5#example-Client-TxPipeline).
+- [Scripting](https://godoc.org/gopkg.in/redis.v5#Script).
+- [Timeouts](https://godoc.org/gopkg.in/redis.v5#Options).
+- [Redis Sentinel](https://godoc.org/gopkg.in/redis.v5#NewFailoverClient).
+- [Redis Cluster](https://godoc.org/gopkg.in/redis.v5#NewClusterClient).
+- [Ring](https://godoc.org/gopkg.in/redis.v5#NewRing).
+- [Instrumentation](https://godoc.org/gopkg.in/redis.v5#ex-package--Instrumentation).
 - [Cache friendly](https://github.com/go-redis/cache).
 - [Rate limiting](https://github.com/go-redis/rate).
 - [Distributed Locks](https://github.com/bsm/redis-lock).
 
-API docs: http://godoc.org/gopkg.in/redis.v5.
-Examples: http://godoc.org/gopkg.in/redis.v5#pkg-examples.
+API docs: https://godoc.org/gopkg.in/redis.v5.
+Examples: https://godoc.org/gopkg.in/redis.v5#pkg-examples.
 
 ## Installation
 
@@ -31,22 +32,6 @@ Import:
 ```go
 import "gopkg.in/redis.v5"
 ```
-
-## Vendoring
-
-If you are using a vendoring tool with support for semantic versioning
-e.g. [glide](https://github.com/Masterminds/glide), you can import this
-package via its GitHub URL:
-
-```yaml
-- package: github.com/go-redis/redis
-  version: ^5.0.0
-```
-
-WARNING: please note that by importing `github.com/go-redis/redis`
-directly (without semantic versioning constrol) you are in danger of
-running in the breaking API changes. Use carefully and at your own
-risk!
 
 ## Quickstart
 
@@ -90,7 +75,7 @@ func ExampleClient() {
 
 ## Howto
 
-Please go through [examples](http://godoc.org/gopkg.in/redis.v5#pkg-examples) to get an idea how to use this package.
+Please go through [examples](https://godoc.org/gopkg.in/redis.v5#pkg-examples) to get an idea how to use this package.
 
 ## Look and feel
 
@@ -103,7 +88,7 @@ Some corner cases:
     vals, err := client.Sort("list", redis.Sort{Offset: 0, Count: 2, Order: "ASC"}).Result()
 
     ZRANGEBYSCORE zset -inf +inf WITHSCORES LIMIT 0 2
-    vals, err := client.ZRangeByScoreWithScores("zset", redis.ZRangeByScore{
+    vals, err := client.ZRangeByScoreWithScores("zset", redis.ZRangeBy{
         Min: "-inf",
         Max: "+inf",
         Offset: 0,

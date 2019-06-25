@@ -2,10 +2,11 @@ package slack
 
 import (
 	"encoding/json"
-	"errors"
+	"net/url"
+	"sync"
 	"time"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -17,59 +18,63 @@ const (
 // RTM represents a managed websocket connection. It also supports
 // all the methods of the `Client` type.
 //
-// Create this element with Client's NewRTM().
+// Create this element with Client's NewRTM() or NewRTMWithOptions(*RTMOptions)
 type RTM struct {
-	idGen IDGenerator
-	pings map[int]time.Time
+	// Client is the main API, embedded
+	Client
+
+	idGen        IDGenerator
+	pingInterval time.Duration
+	pingDeadman  *time.Timer
 
 	// Connection life-cycle
 	conn             *websocket.Conn
 	IncomingEvents   chan RTMEvent
 	outgoingMessages chan OutgoingMessage
 	killChannel      chan bool
+	disconnected     chan struct{}
+	disconnectedm    *sync.Once
 	forcePing        chan bool
 	rawEvents        chan json.RawMessage
-	wasIntentional   bool
-	isConnected      bool
-
-	// Client is the main API, embedded
-	Client
-	websocketURL string
 
 	// UserDetails upon connection
 	info *Info
+
+	// useRTMStart should be set to true if you want to use
+	// rtm.start to connect to Slack, otherwise it will use
+	// rtm.connect
+	useRTMStart bool
+
+	// dialer is a gorilla/websocket Dialer. If nil, use the default
+	// Dialer.
+	dialer *websocket.Dialer
+
+	// mu is mutex used to prevent RTM connection race conditions
+	mu *sync.Mutex
+
+	// connParams is a map of flags for connection parameters.
+	connParams url.Values
 }
 
-// NewRTM returns a RTM, which provides a fully managed connection to
-// Slack's websocket-based Real-Time Messaging protocol.
-func newRTM(api *Client) *RTM {
-	return &RTM{
-		Client:           *api,
-		IncomingEvents:   make(chan RTMEvent, 50),
-		outgoingMessages: make(chan OutgoingMessage, 20),
-		pings:            make(map[int]time.Time),
-		isConnected:      false,
-		wasIntentional:   true,
-		killChannel:      make(chan bool),
-		forcePing:        make(chan bool),
-		rawEvents:        make(chan json.RawMessage),
-		idGen:            NewSafeID(1),
-	}
+// signal that we are disconnected by closing the channel.
+// protect it with a mutex to ensure it only happens once.
+func (rtm *RTM) disconnect() {
+	rtm.disconnectedm.Do(func() {
+		close(rtm.disconnected)
+	})
 }
 
 // Disconnect and wait, blocking until a successful disconnection.
 func (rtm *RTM) Disconnect() error {
-	if !rtm.isConnected {
-		return errors.New("Invalid call to Disconnect - Slack API is already disconnected")
+	// always push into the kill channel when invoked,
+	// this lets the ManagedConnection() function properly clean up.
+	// if the buffer is full then just continue on.
+	select {
+	case rtm.killChannel <- true:
+		return nil
+	case <-rtm.disconnected:
+		return ErrAlreadyDisconnected
 	}
-	rtm.killChannel <- true
-	return nil
-}
-
-// Reconnect only makes sense if you've successfully disconnectd with Disconnect().
-func (rtm *RTM) Reconnect() error {
-	logger.Println("RTM::Reconnect not implemented!")
-	return nil
 }
 
 // GetInfo returns the info structure received when calling
@@ -90,4 +95,12 @@ func (rtm *RTM) SendMessage(msg *OutgoingMessage) {
 	}
 
 	rtm.outgoingMessages <- *msg
+}
+
+func (rtm *RTM) resetDeadman() {
+	rtm.pingDeadman.Reset(deadmanDuration(rtm.pingInterval))
+}
+
+func deadmanDuration(d time.Duration) time.Duration {
+	return d * 4
 }
