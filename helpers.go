@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 	"gopkg.in/ldap.v2"
 	"gopkg.in/redis.v5"
 )

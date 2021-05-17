@@ -10,10 +10,11 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/oschwald/geoip2-golang"
 	"io/ioutil"
 	"text/template"
 	"time"
+
+	"github.com/oschwald/geoip2-golang"
 )
 
 // templInfo is the info we can pass to template.New
@@ -41,7 +42,11 @@ func makeMessage(config VPNNotifyConfig, lt time.Time, env string, geo *geoip2.C
 	if config.GeoIPEnabled {
 		vars.GeoIP = true
 		vars.City = geo.City.Names["en"]
-		vars.State = geo.Subdivisions[0].Names["en"]
+		if len(geo.Subdivisions) == 1 {
+			vars.State = geo.Subdivisions[0].IsoCode
+		} else {
+			vars.State = ""
+		}
 		vars.Country = geo.Country.IsoCode
 	} else {
 		vars.GeoIP = false
