@@ -1,9 +1,8 @@
 // vpnnotify - notify a user of their brand new vpn session!
 // vpnnotify.go: our func main() holder
 //
-// Copyright 2017 Threat Stack, Inc.
+// Copyright 2017-2022 F5 Inc.
 // Licensed under the BSD 3-clause license; see LICENSE for more information.
-// Author: Patrick T. Cable II <pat.cable@threatstack.com>
 
 package main
 
